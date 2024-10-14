@@ -1,11 +1,7 @@
-name: CI
+name: Test and Coverage
 
 on:
   push:
-    branches:
-      - develop
-      - main
-  pull_request:
     branches:
       - develop
       - main
@@ -15,24 +11,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install dependencies
+      run: |
+        python3 -m venv venv        # Create a virtual environment
+        source venv/bin/activate     # Activate the virtual environment
+        pip install --upgrade pip    # Upgrade pip inside the venv
+        pip install -r requirements.txt  # Install dependencies
 
-      - name: Run tests and collect coverage
-        run: npx jest --coverage
+    - name: Run Tests and Coverage
+      run: |
+        source venv/bin/activate     # Activate the virtual environment
+        pytest --cov=.               # Run tests with coverage report
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-coverage-report
+    - name: Upload coverage to Codecov
+      run: |
+        source venv/bin/activate     # Activate the virtual environment
+        bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
